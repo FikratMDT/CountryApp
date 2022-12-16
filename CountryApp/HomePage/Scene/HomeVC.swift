@@ -11,6 +11,8 @@ class HomeVC: UIViewController {
 
     @IBOutlet weak var tableView: UITableView!
     
+    @IBOutlet weak var searchStack: UIStackView!
+    @IBOutlet weak var navStack: UIStackView!
     var countryModel = [CountryListElement]()
     
     override func viewDidLoad() {
@@ -31,13 +33,10 @@ class HomeVC: UIViewController {
             } else if let data = data {
                 do {
                     let lists = try JSONDecoder().decode([CountryListElement].self, from: data)
-                    let image = UIImage(data: data)
                     DispatchQueue.main.async {
                         self.countryModel = lists
-                        self.tableView.reloadData()
+                        self.tableView?.reloadData()
                     }
-                    
-                    self.tableView.reloadData()
                 }catch{
                     print(error)
                 }
@@ -48,9 +47,22 @@ class HomeVC: UIViewController {
     }
     
     @IBAction func searchAction(_ sender: Any) {
+        UIView.animate(withDuration: 0.1) {
+            self.navStack.isHidden = true
+            self.searchStack.isHidden = false
+            self.view.layoutIfNeeded()
+        }
     }
     
     @IBAction func settingsAction(_ sender: Any) {
+    }
+    
+    @IBAction func cancelAction(_ sender: Any) {
+        UIView.animate(withDuration: 0.1) {
+            self.navStack.isHidden = false
+            self.searchStack.isHidden = true
+            self.view.layoutIfNeeded()
+        }
     }
 }
 
@@ -62,9 +74,24 @@ extension HomeVC: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "\(CountryCell.self)", for: indexPath) as! CountryCell
         cell.countryLabel.text = countryModel[indexPath.row].name?.common
-        let imageUrl =
-        cell.countryImage.image = UIImage(named: countryModel[indexPath.row].flag ?? "")
+        cell.countryImage.loadFrom(URLAddress: countryModel[indexPath.row].flags?.png ?? "")
         return cell
+    }
+}
+
+extension UIImageView {
+    func loadFrom(URLAddress: String) {
+        guard let url = URL(string: URLAddress) else {
+            return
+        }
+        
+        DispatchQueue.main.async { [weak self] in
+            if let imageData = try? Data(contentsOf: url) {
+                if let loadedImage = UIImage(data: imageData) {
+                        self?.image = loadedImage
+                }
+            }
+        }
     }
 }
 
